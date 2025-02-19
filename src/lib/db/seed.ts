@@ -18,6 +18,14 @@ async function main() {
         title: "Buy egg.",
         completed: true,
       },
+      {
+        title: "Buy nukes.",
+        completed: true,
+      },
+      {
+        title: "Buy grapes.",
+        completed: true,
+      },
     ])
     .execute();
 

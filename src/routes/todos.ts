@@ -9,9 +9,9 @@ import { serializeTodo } from "../lib/utils";
 const todos = new Hono();
 
 todos.post("/", async (c) => {
-  const { title } = await c.req.json();
+  const { title, rank } = await c.req.json();
 
-  const todo = await todoRepository.createTodo({ title });
+  const todo = await todoRepository.createTodo({ title, rank });
 
   return c.json(serializeTodo(todo));
 });

@@ -17,6 +17,8 @@ export default interface TodosTable {
   created_at: ColumnType<Date | null, Date | string | null, Date | string | null>;
 
   updated_at: ColumnType<Date | null, Date | string | null, Date | string | null>;
+
+  rank: ColumnType<number, number, number>;
 }
 
 export type Todos = Selectable<TodosTable>;

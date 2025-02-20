@@ -9,6 +9,7 @@ const todo = () => {
         .insertInto("todos")
         .values({
           title: input.title,
+          rank: 900,
         })
         .executeTakeFirst();
 
@@ -23,7 +24,7 @@ const todo = () => {
       const todos = await db
         .selectFrom("todos")
         .selectAll()
-        .orderBy("todos.created_at", "asc")
+        .orderBy("todos.created_at", "desc")
         .execute();
 
       return todos;

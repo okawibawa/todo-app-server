@@ -8,8 +8,8 @@ export async function up(db: Kysely<any>) {
     )
     .addColumn("title", "varchar(255)", (col) => col.notNull())
     .addColumn("completed", "boolean", (col) => col.notNull().defaultTo(false))
-    .addColumn("created_at", "timestamp", (col) => col.defaultTo("now()"))
-    .addColumn("updated_at", "timestamp", (col) => col.defaultTo("now()"))
+    .addColumn("created_at", "timestamp", (col) => col.defaultTo(sql`now()`))
+    .addColumn("updated_at", "timestamp", (col) => col.defaultTo(sql`now()`))
     .execute();
 }
 

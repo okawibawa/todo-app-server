@@ -1,18 +1,24 @@
 import { Hono } from "hono";
-import { logger } from "hono/logger";
 
 import todos from "./todos";
+import { UpgradeWebSocket, WSContext } from "hono/ws";
+import { ServerWebSocket } from "bun";
 
-export const routes = (app: Hono) => {
-  app.use(logger());
+import { activeConnections } from "../lib/websocket/manager";
 
-  app.get("/", (c) => {
-    return c.json({
-      uptime: process.uptime(),
-      message: "Ok",
-      date: new Date(),
-    });
-  });
+export const routes = (app: Hono, upgradeWebSocket: UpgradeWebSocket<ServerWebSocket>) => {
+  app.get("/", upgradeWebSocket(() => {
+    return {
+      onOpen(_, ws) {
+        console.log("Connection opened.")
+        activeConnections.add(ws)
+      },
+      onClose(_, ws) {
+        console.log("Connection closed.")
+        activeConnections.delete(ws)
+      }
+    }
+  }))
 
-  app.route("/todos", todos);
+  app.route("/todos", todos(upgradeWebSocket));
 };

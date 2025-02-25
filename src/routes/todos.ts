@@ -5,41 +5,69 @@ import { todoRepository } from "../app/repositories/todo.repository";
 import { TodosId } from "../lib/db/schema/public/Todos";
 
 import { serializeTodo } from "../lib/utils";
+import { UpgradeWebSocket } from "hono/ws";
+import { ServerWebSocket } from "bun";
+import { broadcast } from "../lib/websocket/manager";
 
-const todos = new Hono();
+export default function(upgradeWebSocket: UpgradeWebSocket<ServerWebSocket>) {
+  const todos = new Hono();
 
-todos.post("/", async (c) => {
-  const { title, rank } = await c.req.json();
+  todos.post("/", async (c) => {
+    const { title, rank } = await c.req.json();
 
-  const todo = await todoRepository.createTodo({ title, rank });
+    const todo = await todoRepository.createTodo({ title, rank });
 
-  return c.json(serializeTodo(todo));
-});
+    broadcast({
+      type: "NEW_TODO",
+      todo: serializeTodo(todo)
+    })
 
-todos.patch('/', async (c) => {
-  const todo = await todoRepository.updateTodo(1, { title: "new title" })
+    return c.json(serializeTodo(todo));
+  });
 
-  return c.json({ message: "updated" })
-})
+  todos.patch('/:id', async (c) => {
+    const { id } = c.req.param()
+    const payload = await c.req.json()
 
-todos.get("/", async (c) => {
-  const todos = await todoRepository.getTodos();
+    const todo = await todoRepository.updateTodo(id as TodosId, payload)
 
-  return c.json(todos);
-});
+    broadcast({
+      type: "UPDATE_TODO",
+      todo: serializeTodo(todo)
+    })
 
-todos.delete("/completed", async (c) => {
-  const todos = await todoRepository.deleteCompletedTodos();
+    return c.json(serializeTodo(todo))
+  })
 
-  return c.json(serializeTodo(todos[0]));
-});
+  todos.get("/", async (c) => {
+    const todos = await todoRepository.getTodos();
 
-todos.delete("/:id", async (c) => {
-  const { id } = c.req.param();
+    return c.json(todos);
+  });
 
-  const todo = await todoRepository.deleteTodo(id as TodosId);
+  todos.delete("/completed", async (c) => {
+    const todos = await todoRepository.deleteCompletedTodos();
 
-  return c.json(serializeTodo(todo));
-});
+    broadcast({
+      type: "DELETE_COMPLETED_TODOS",
+      todo: serializeTodo(todos)
+    })
 
-export default todos;
+    return c.json(serializeTodo(todos[0]));
+  });
+
+  todos.delete("/:id", async (c) => {
+    const { id } = c.req.param();
+
+    const todo = await todoRepository.deleteTodo(id as TodosId);
+
+    broadcast({
+      type: "DELETE_TODO",
+      todo: serializeTodo(todo)
+    })
+
+    return c.json(serializeTodo(todo));
+  });
+
+  return todos;
+}

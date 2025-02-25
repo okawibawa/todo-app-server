@@ -19,8 +19,17 @@ const todo = () => {
     }
   };
 
-  const updateTodo = async (id: number, payload: { title?: string, completed?: boolean }) => {
-    console.log(id, { title: payload.title, completed: payload.completed })
+  const updateTodo = async (id: TodosId, payload: { title?: string, completed?: boolean }) => {
+    try {
+      const todo = await db.updateTable('todos').set({
+        ...(payload.title && { title: payload.title }),
+        ...(payload.completed && { completed: payload.completed })
+      }).where("todos.id", '=', id).execute()
+
+      return todo
+    } catch (error) {
+      throw error
+    }
   }
 
   const getTodos = async () => {

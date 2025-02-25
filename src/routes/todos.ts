@@ -16,6 +16,12 @@ todos.post("/", async (c) => {
   return c.json(serializeTodo(todo));
 });
 
+todos.patch('/', async (c) => {
+  const todo = await todoRepository.updateTodo(1, { title: "new title" })
+
+  return c.json({ message: "updated" })
+})
+
 todos.get("/", async (c) => {
   const todos = await todoRepository.getTodos();
 

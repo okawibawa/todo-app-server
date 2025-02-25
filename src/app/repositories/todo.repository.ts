@@ -19,6 +19,10 @@ const todo = () => {
     }
   };
 
+  const updateTodo = async (id: number, payload: { title?: string, completed?: boolean }) => {
+    console.log(id, { title: payload.title, completed: payload.completed })
+  }
+
   const getTodos = async () => {
     try {
       const todos = await db
@@ -59,7 +63,7 @@ const todo = () => {
     }
   };
 
-  return { createTodo, getTodos, deleteTodo, deleteCompletedTodos };
+  return { createTodo, updateTodo, getTodos, deleteTodo, deleteCompletedTodos };
 };
 
 export const todoRepository = todo();

@@ -7,6 +7,14 @@ import { ServerWebSocket } from "bun";
 import { activeConnections } from "../lib/websocket/manager";
 
 export const routes = (app: Hono, upgradeWebSocket: UpgradeWebSocket<ServerWebSocket>) => {
+  app.get("/health", (c) => {
+    return c.json({
+      uptime: process.uptime(),
+      status: 'Ok',
+      date: new Date()
+    })
+  })
+
   app.get("/", upgradeWebSocket(() => {
     return {
       onOpen(_, ws) {

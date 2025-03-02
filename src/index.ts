@@ -26,7 +26,7 @@ app.notFound((c) => {
 });
 
 export default {
-  port: 3001,
+  port: 3010,
   fetch: app.fetch,
   websocket
 };

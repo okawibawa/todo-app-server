@@ -1,11 +1,11 @@
-To install dependencies:
-```sh
-bun install
-```
+# Tod Server
 
-To run:
-```sh
-bun run dev
-```
+A todo app service with basic functionalities and real-time sync.
 
-open http://localhost:3000
+## Stack
+
+- Hono initiated with Bun
+
+- Kysely for type-safe SQL query builder
+
+- Kanel to generate type definitions based on database schema 

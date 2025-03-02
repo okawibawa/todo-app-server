@@ -18,7 +18,7 @@ export default function(upgradeWebSocket: UpgradeWebSocket<ServerWebSocket>) {
     const todo = await todoRepository.createTodo({ title, rank });
 
     broadcast({
-      type: "NEW_TODO",
+      type: "ADD_TODO",
       todo: serializeTodo(todo)
     })
 

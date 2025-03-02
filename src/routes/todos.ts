@@ -57,16 +57,26 @@ export default function(upgradeWebSocket: UpgradeWebSocket<ServerWebSocket>) {
   });
 
   todos.delete("/:id", async (c) => {
-    const { id } = c.req.param();
+    try {
+      const { id } = c.req.param();
 
-    const todo = await todoRepository.deleteTodo(id as TodosId);
+      const todo = await todoRepository.deleteTodo(id as TodosId);
 
-    broadcast({
-      type: "DELETE_TODO",
-      todo: serializeTodo(todo)
-    })
+      // Convert `numDeletedRows` to `number` since it won't exceed `Number.MAX_SAFE_INTEGER` (~9 quadrillion)
+      if (!todo || Number(todo.numDeletedRows) === 0) {
+        return c.json({ error: "Todo not found" }, 400)
+      }
 
-    return c.json(serializeTodo(todo));
+      broadcast({
+        type: "DELETE_TODO",
+        todo: serializeTodo(todo)
+      })
+
+      return c.json(serializeTodo(todo));
+    } catch (error) {
+      console.log("Failed to delete todo: ", error)
+      return c.json({ error: "Failed to delete todo." }, 500)
+    }
   });
 
   return todos;

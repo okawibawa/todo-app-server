@@ -8,52 +8,130 @@ import { serializeTodo } from "../lib/utils";
 import { UpgradeWebSocket } from "hono/ws";
 import { ServerWebSocket } from "bun";
 import { broadcast } from "../lib/websocket/manager";
+import { unknown } from "zod";
+import { UnknownRow } from "kysely";
 
 export default function(upgradeWebSocket: UpgradeWebSocket<ServerWebSocket>) {
   const todos = new Hono();
 
   todos.post("/", async (c) => {
-    const { title, rank } = await c.req.json();
+    try {
+      const { title, rank } = await c.req.json();
 
-    const todo = await todoRepository.createTodo({ title, rank });
+      if (!title || typeof title !== "string") {
+        return c.json({ error: "Title is required and must be a string" }, 400);
+      }
 
-    broadcast({
-      type: "ADD_TODO",
-      todo: serializeTodo(todo)
-    })
+      const todo = await todoRepository.createTodo({ title, rank });
 
-    return c.json(serializeTodo(todo));
+      if (Number(todo.numInsertedOrUpdatedRows) === 0) {
+        return c.json({ error: "Failed to add todo" }, 400)
+      }
+
+      broadcast({
+        type: "ADD_TODO",
+        todo: serializeTodo(todo)
+      })
+
+      return c.json(serializeTodo(todo));
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.log("Failed to add todo: ", {
+          message: error.message,
+          stack: error.stack
+        })
+
+        return c.json({ error: "Failed to add todo.", details: error.message }, 500)
+      }
+
+      console.log("Failed to add todo: ", error)
+
+      return c.json({ error: "Failed to add todo." }, 500)
+    }
   });
 
   todos.patch('/:id', async (c) => {
-    const { id } = c.req.param()
-    const payload = await c.req.json()
+    try {
+      const { id } = c.req.param()
+      const payload = await c.req.json()
 
-    const todo = await todoRepository.updateTodo(id as TodosId, payload)
+      const todo = await todoRepository.updateTodo(id as TodosId, payload)
 
-    broadcast({
-      type: "UPDATE_TODO",
-      todo: serializeTodo(todo)
-    })
+      if (Number(todo[0].numUpdatedRows) === 0) {
+        return c.json({ error: "Failed to update todo" }, 400)
+      }
 
-    return c.json(serializeTodo(todo))
+      broadcast({
+        type: "UPDATE_TODO",
+        todo: serializeTodo(todo)
+      })
+
+      return c.json(serializeTodo(todo))
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.log("Failed to update todo: ", {
+          message: error.message,
+          stack: error.stack
+        })
+
+        return c.json({ error: "Failed to update todo.", details: error.message }, 500)
+      }
+
+      console.log("Failed to update todo: ", error)
+
+      return c.json({ error: "Failed to update todo." }, 500)
+    }
   })
 
   todos.get("/", async (c) => {
-    const todos = await todoRepository.getTodos();
+    try {
+      const todos = await todoRepository.getTodos();
 
-    return c.json(todos);
+      return c.json(todos);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.log("Failed to get todo: ", {
+          message: error.message,
+          stack: error.stack
+        })
+
+        return c.json({ error: "Failed to get todo.", details: error.message }, 500)
+      }
+
+      console.log("Failed to get todo: ", error)
+
+      return c.json({ error: "Failed to get todo." }, 500)
+    }
   });
 
   todos.delete("/completed", async (c) => {
-    const todos = await todoRepository.deleteCompletedTodos();
+    try {
+      const todos = await todoRepository.deleteCompletedTodos();
 
-    broadcast({
-      type: "DELETE_COMPLETED_TODOS",
-      todo: serializeTodo(todos)
-    })
+      if (Number(todos[0].numDeletedRows) === 0) {
+        return c.json({ error: "Failed to delete completed todo" }, 400)
+      }
 
-    return c.json(serializeTodo(todos[0]));
+      broadcast({
+        type: "DELETE_COMPLETED_TODOS",
+        todo: serializeTodo(todos)
+      })
+
+      return c.json(serializeTodo(todos[0]));
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.log("Failed to delete complete todo: ", {
+          message: error.message,
+          stack: error.stack
+        })
+
+        return c.json({ error: "Failed to delete complete todo.", details: error.message }, 500)
+      }
+
+      console.log("Failed to delete complete todo: ", error)
+
+      return c.json({ error: "Failed to delete complete todo." }, 500)
+    }
   });
 
   todos.delete("/:id", async (c) => {
@@ -74,7 +152,17 @@ export default function(upgradeWebSocket: UpgradeWebSocket<ServerWebSocket>) {
 
       return c.json(serializeTodo(todo));
     } catch (error) {
+      if (error instanceof Error) {
+        console.log("Failed to delete todo: ", {
+          message: error.message,
+          stack: error.stack
+        })
+
+        return c.json({ error: "Failed to delete todo.", details: error.message }, 500)
+      }
+
       console.log("Failed to delete todo: ", error)
+
       return c.json({ error: "Failed to delete todo." }, 500)
     }
   });
